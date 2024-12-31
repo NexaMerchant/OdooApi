@@ -23,6 +23,12 @@ composer remove nexa-merchant/odooapi
 composer update nexa-merchant/odooapi
 ```
 
+# Api Documentation
+
+```
+http://127.0.0.1/odooapi/admin/documentation
+```
+
 # How to Publish
 
 ```
