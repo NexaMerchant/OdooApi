@@ -21,3 +21,5 @@ Route::group(['middleware' => ['api'], 'prefix' => 'api'], function () {
 
      });
 });
+
+include __DIR__ . '/api.v1.php';
