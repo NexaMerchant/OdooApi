@@ -2,6 +2,7 @@
 
 namespace NexaMerchant\OdooApi\Http\Controllers\Api\V1;
 
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use NexaMerchant\OdooApi\Http\Controllers\Api\Controller;
@@ -13,6 +14,7 @@ class WebhookController extends Controller
         $data = [];
         $data['code'] = 200;
         $data['message'] = "success";
+        Log::info('Order odoo Webhook', $request->all());
         return response()->json($data);
     }
 
@@ -21,6 +23,7 @@ class WebhookController extends Controller
         $data = [];
         $data['code'] = 200;
         $data['message'] = "success";
+        Log::info('Product odoo Webhook', $request->all());
         return response()->json($data);
     }
 
