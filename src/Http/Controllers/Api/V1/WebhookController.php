@@ -15,6 +15,9 @@ class WebhookController extends Controller
         $data['code'] = 200;
         $data['message'] = "success";
         Log::info('Order odoo Webhook', $request->all());
+        Log::info('Order odoo Webhook', $request->getContent());
+        // _SERVER request
+        Log::info('Order odoo Webhook', $request->server());
         return response()->json($data);
     }
 
