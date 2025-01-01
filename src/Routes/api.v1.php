@@ -12,7 +12,7 @@ Route::group(['middleware' => ['api','assign_request_id'], 'prefix' => 'api/v1']
             Route::post('product', 'product')->name('odooapi.api.webhook.product');
             Route::post('customer', 'customer')->name('odooapi.api.webhook.customer');
             Route::post('invoice', 'invoice')->name('odooapi.api.webhook.invoice');
-            Route::post('payment', 'payment')->name('odooapi.api.webhook.payment');
+          //  Route::post('payment', 'payment')->name('odooapi.api.webhook.payment');
             Route::post('refund', 'refund')->name('odooapi.api.webhook.refund');
             Route::post('stock', 'stock')->name('odooapi.api.webhook.stock');
 
