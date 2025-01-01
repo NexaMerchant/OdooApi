@@ -1,5 +1,9 @@
 # NexaMerchant/OdooApi
 
+OdooApi is a Laravel package that provides an easy way to connect to Odoo API. When you install this package, you will be able to connect to Odoo API and perform CURD operations on Odoo models. and use Webhook to sync data between Odoo and laravel.
+
+
+
 [![Build Status](https://github.com/NexaMerchant/OdooApi/workflows/Laravel/badge.svg)](https://github.com/NexaMerchant/OdooApi)
 [![Release](https://img.shields.io/github/release/NexaMerchant/OdooApi.svg?style=flat-square)](https://github.com/NexaMerchant/OdooApi/releases)
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/Nexa-Merchant/OdooApi.svg?style=flat-square)](https://packagist.org/packages/Nexa-Merchant/OdooApi)

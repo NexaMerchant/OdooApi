@@ -51,7 +51,7 @@ return [
      * 
      * The email of the author
      */
-    'email' => 'email@example.com',
+    'email' => 'nice.lizhi@gmail.com',
 
     /**
      * 
