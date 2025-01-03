@@ -85,4 +85,34 @@ return [
         'email' => 'email@example.com',
         'issues' => 'https://github.com/xxl4'
     ],
+
+    /**
+     * 
+     * Odoo Host
+     */
+    'host' => env('ODOO_HOST', 'http://localhost'),
+
+    /**
+     * 
+     * Odoo Db
+     */
+    'db' => env('ODOO_DB', 'odoo'),
+
+    /**
+     * 
+     * Odoo Username
+     */
+    'username' => env('ODOO_USERNAME', 'admin'),
+
+    /**
+     * 
+     * Odoo Password
+     */
+    'password' => env('ODOO_PASSWORD', 'admin'),
+
+    /**
+     * 
+     * Odoo Api Key
+     */
+    'api_key' => env('ODOO_API_KEY', 'admin'),
 ];
