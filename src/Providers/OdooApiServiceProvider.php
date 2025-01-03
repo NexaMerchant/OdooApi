@@ -102,6 +102,7 @@ class OdooApiServiceProvider extends ServiceProvider
             $this->commands([
                 \NexaMerchant\OdooApi\Console\Commands\Install::class,
                 \NexaMerchant\OdooApi\Console\Commands\UnInstall::class,
+                \NexaMerchant\OdooApi\Console\Commands\Products\Sync::class,
             ]);
         }
     }
