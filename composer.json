@@ -11,7 +11,7 @@
     ],
     "require": {
         "laravel/framework": "~6.0||~7.0||~8.0||~9.0||~10.0||~11.0",
-        "ang3/php-odoo-api-client": "^v7"
+        "ang3/php-odoo-api-client": "8.x-dev"
     },
     "require-dev": {
         "phpunit/phpcov": ">=6.0",
