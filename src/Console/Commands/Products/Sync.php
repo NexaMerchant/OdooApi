@@ -19,7 +19,10 @@ class Sync extends Command
 
         // connect to the odoo database
         $odoo = new \NexaMerchant\OdooApi\Helper\Odoo();
-        var_dump($odoo->getProduct($prod_id, []));
+
+        //var_dump($odoo->getProducts());
+
+        var_dump($odoo->getProduct($prod_id));
 
         // get the products from the main database
     }

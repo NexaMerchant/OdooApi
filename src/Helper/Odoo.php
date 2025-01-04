@@ -41,15 +41,26 @@ class Odoo {
         );
     }
 
-    public function getProduct($id)
+    public function getProduct($prod_id)
     {
-        var_dump($id);
-        var_dump($this->uid);
         // ...existing code...
-        return $this->models->execute_kw($this->db, $this->uid, $this->api_key,
-            'product.product', 'read',
-            array($id),
-            array('fields'=> [])
+        $product = $this->models->execute_kw($this->db, $this->uid, $this->api_key,
+            'product.product', 'search_read',
+            array(array(array('id', '=', $prod_id))),
+            array('fields'=> array('name', 'list_price', 'description', 'product_tmpl_id', 'product_variant_ids'), 'limit'=>1)
         );
+        // products variable is an array of products
+        $product = $product[0];
+
+        // get products options
+        $product['options'] = $this->models->execute_kw($this->db, $this->uid, $this->api_key,
+            'product.template.attribute.value', 'search_read',
+            array(array(array('product_tmpl_id', '=', $product['product_tmpl_id'][0]))),
+            array('fields'=> array('name', 'attribute_id'), 'limit'=>10)
+        );
+
+
+
+        return $product;
     }
 }
