@@ -43,11 +43,13 @@ class Odoo {
 
     public function getProduct($id)
     {
+        var_dump($id);
+        var_dump($this->uid);
         // ...existing code...
         return $this->models->execute_kw($this->db, $this->uid, $this->api_key,
             'product.product', 'read',
             array($id),
-            array('fields'=> array('name', 'list_price'))
+            array('fields'=> [])
         );
     }
 }
