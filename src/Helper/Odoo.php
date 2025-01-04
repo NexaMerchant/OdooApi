@@ -47,12 +47,14 @@ class Odoo {
         $product = $this->models->execute_kw($this->db, $this->uid, $this->api_key,
             'product.product', 'search_read',
             array(array(array('id', '=', $prod_id))),
+            // fields @link https://github.com/NexaMerchant/OdooClient/blob/main/docs/product.product.txt
             array('fields'=> array('name', 'list_price', 'description', 'product_tmpl_id', 'product_variant_ids'), 'limit'=>1)
         );
         // products variable is an array of products
         $product = $product[0];
 
         // get products options
+        // product.template.attribute.value @link https://github.com/NexaMerchant/OdooClient/blob/main/docs/product.template.attribute.value.txt
         $product['options'] = $this->models->execute_kw($this->db, $this->uid, $this->api_key,
             'product.template.attribute.value', 'search_read',
             array(array(array('product_tmpl_id', '=', $product['product_tmpl_id'][0]))),
