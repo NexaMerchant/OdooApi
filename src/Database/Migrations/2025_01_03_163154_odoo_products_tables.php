@@ -26,24 +26,11 @@ return new class extends Migration
             $table->string('categ_id');
             $table->string('taxes_id');
             $table->string('description');
-            $table->string('description_sale');
-            $table->string('description_purchase');
-            $table->string('description_picking');
-            $table->string('description_internal');
-            $table->string('description_variant');
-            $table->string('description_invoice');
-            $table->string('description_pickingout');
-            $table->string('description_pickingin');
-            $table->string('description_pickinginternal');
-            $table->string('description_pickingoutin');
-            $table->string('description_pickinginout');
-            $table->string('description_pickinginternalout');
-            $table->string('description_pickinginternalin');
-            $table->string('description_pickinginternaloutin');
-            $table->string('description_pickinginternalinout');
-            $table->string('description_pickingoutinternal');
-            $table->string('description_pickingininternal');
-            $table->string('description_pickingoutinternalin');
+            $table->string('seo_name');
+            $table->string('currency_id');
+            $table->timestamps();
+
+
         });
 
     }

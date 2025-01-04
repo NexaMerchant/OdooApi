@@ -50,6 +50,7 @@ return new class extends Migration
             $table->string('calendar_contact_ack');
             $table->string('calendar_last_notif_seen');
             $table->string('calendar_next_notif_ack');
+            $table->timestamps();
         });
     }
 

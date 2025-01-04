@@ -63,6 +63,7 @@ return new class extends Migration
             $table->string('amount_tax_signed');
             $table->string('amount_delivery_signed');
             $table->string('amount_discount_signed');
+            $table->timestamps();
         });
     }
 
