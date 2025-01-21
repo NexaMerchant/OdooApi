@@ -20,10 +20,54 @@ class WebhookController extends Controller
 
     // product
     public function product(Request $request) {
-        $data = [];
-        $data['code'] = 200;
-        $data['message'] = "success";
-        Log::info('Product odoo Webhook', $request->all());
+        
+        $data = $request->all();
+
+        //$values = json_decode($data['values'], true);
+
+        Log::info('Product odoo Webhook', $data);
+
+        return response()->json($data);
+
+        $product = \NexaMerchant\OdooApi\Models\Products::where('product_id', $values['id'])->first();
+        if($product) {
+            $product->name = $values['name'];
+            $product->default_code = $values['default_code'];
+            $product->barcode = $values['barcode'];
+            $product->type = $values['type'];
+            $product->list_price = $values['list_price'];
+            $product->standard_price = $values['standard_price'];
+           // $product->cost = $values['cost'];
+            $product->qty_available = $values['qty_available'];
+            $product->uom_id = $values['uom_id'];
+            $product->categ_id = $values['categ_id'];
+            $product->taxes_id = $values['taxes_id'];
+            $product->description = $values['description'];
+            $product->seo_name = $values['seo_name'];
+            $product->currency_id = $values['currency_id'];
+            $product->values = json_encode($values);
+            $product->save();
+        } else {
+            $product = new \NexaMerchant\OdooApi\Models\Products();
+            $product->name = $values['name'];
+            $product->product_id = $values['id'];
+            $product->default_code = $values['default_code'];
+            $product->barcode = $values['barcode'];
+            $product->type = $values['type'];
+            $product->list_price = $values['list_price'];
+            $product->standard_price = $values['standard_price'];
+        //    $product->cost = $values['cost'];
+            $product->qty_available = $values['qty_available'];
+            $product->uom_id = $values['uom_id'];
+            $product->categ_id = $values['categ_id'];
+            $product->taxes_id = $values['taxes_id'];
+            $product->description = $values['description'];
+            $product->seo_name = $values['seo_name'];
+            //$product->currency_id = $values['currency_id'];
+            $product->values = $values;
+            $product->save();
+        }
+
         return response()->json($data);
     }
 
