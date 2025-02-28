@@ -443,12 +443,7 @@ class ProductsController extends Controller
    
 
     public function shopify(Request $request) {
-
         $req = $request->all();
-
-      
-       
-
         //$req['product']['id'] = time(); // for test 
         $input = [];
         $input['sku'] = $req['product']['id'];
@@ -457,12 +452,8 @@ class ProductsController extends Controller
         $super_attributes_label = []; // super attributes label
         $super_attributes_ids = [];
 
-        // print_r($req['product']);exit;
-
         // create a family attribute by sku
         $attributeFamilyRepository = app('Webkul\Attribute\Repositories\AttributeFamilyRepository');
-
-
 
         //check if the attribute family is exist
         $attributeFamily = $attributeFamilyRepository->findOneByField('code', $input['sku']);
@@ -471,7 +462,6 @@ class ProductsController extends Controller
 
         $attribute_group_id = 0;
         $action = 'create';
-
 
         if(!$attributeFamily){
             Event::dispatch('catalog.attribute_family.create.before');
@@ -482,10 +472,7 @@ class ProductsController extends Controller
                 'is_user_defined' => 1
             ]);
 
-
-
             Event::dispatch('catalog.attribute_family.create.after', $attributeFamily);
-
             // create a default group for the family
             $attributeGroupRepository = app('Webkul\Attribute\Repositories\AttributeGroupRepository');
             Event::dispatch('catalog.attributeGroup.create.before');
@@ -537,8 +524,6 @@ class ProductsController extends Controller
 
 
         // print_r($req['product']['options']);exit;
-
-
 
         foreach ($req['product']['options'] as $attribute) {
             //var_dump($attribute['values']);
@@ -761,19 +746,13 @@ class ProductsController extends Controller
         // 输出去重后的数组
         print_r($productImages);
 
-      
-
-
         $product->images()->createMany($productImages);
-
-
-
 
         $data = [];
 
         $data['error'] = 1;
 
-        return response()->json($request->all());
+        return response()->json($productImages);
     }
 
 
@@ -839,6 +818,67 @@ protected function arrayUniqueByField($array, $field) {
             return $attributeOption->id;
         }
         return 0;
+    }
+
+    // shopify images save
+    public function shopifyImages(Request $request) {
+        $req = $request->all();
+
+        // match the variants to the sku id
+        $skus = $req['product']['variants'];
+        $main_sku = $req['product']['id'];
+
+        //product images
+        $images = [];
+        foreach($req['product']['images'] as $key=>$image) {
+            $images[$image['id']] = $image['src'];
+        }
+
+        $arrContextOptions=array(
+            "ssl"=>array(
+                  "verify_peer"=>false,
+                  "verify_peer_name"=>false,
+              ),
+        ); 
+
+        //var_dump($skus);
+        foreach($skus as $key=>$sku) {
+            // use the sku to find the product id and add the images to the sku
+            $sku_code = $main_sku."-".$sku['sku'];
+            $product = $this->productRepository->findOneByField("sku", $sku_code);
+            $product_id = $product->id;
+            // var_dump($sku['image_id']);
+            // var_dump($images[$sku['image_id']]);
+            $images_url = isset($images[$sku['image_id']]) ? trim($images[$sku['image_id']]) : null;
+            if($images_url) continue;
+            // download the image url and save the image to the product
+            $info = pathinfo($images_url);
+        
+    
+            $image_path = "product/".$product_id."/".$info['filename'].".webp";
+            $local_image_path = "storage/".$image_path;
+            if(!file_exists(public_path($local_image_path))) {
+            
+                $contents = file_get_contents($images_url, false, stream_context_create($arrContextOptions));
+                //var_dump($contents);  Storage
+                Storage::disk("images")->put($local_image_path, $contents);
+           
+            }
+            //$image_path;
+
+            $productImages = [];
+            $productImages[] = [
+                'path' => env('APP_URL') . '/storage/'.$image_path,
+                'type' => 'images',
+                'position' => 1
+            ];
+
+
+            $product->images()->createMany($productImages);
+
+        }
+
+
     }
 
 }

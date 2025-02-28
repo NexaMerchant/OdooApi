@@ -24,6 +24,8 @@ Route::group(['middleware' => ['api','assign_request_id'], 'prefix' => 'api/v1']
             Route::get('/', 'index')->name('odooapi.api.products.index');
             Route::get('/{id}', 'show')->name('odooapi.api.products.show');
             Route::post('shopify', 'shopify')->name('odooapi.api.products.shopify');
+            Route::post('shopify-images', 'shopifyImages')->name('odooapi.api.products.shopify-images');
+
         });
 
     });
