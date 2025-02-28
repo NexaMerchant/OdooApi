@@ -16,6 +16,10 @@ class Odoo {
     {
         // ...existing code...
         $this->url = config('OdooApi.host');
+        if($this->url=="http://localhost") {
+            return throw new \Exception("Please config ODOO_HOST in env", 1);
+            
+        }
         $this->db = config('OdooApi.db');
         $this->username = config('OdooApi.username');
         $this->password = '';
