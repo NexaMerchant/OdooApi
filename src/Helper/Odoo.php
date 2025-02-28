@@ -15,19 +15,19 @@ class Odoo {
     public function __construct()
     {
         // ...existing code...
-        $this->url = config('OdooApi.host');
-        if($this->url=="http://localhost") {
-            return throw new \Exception("Please config ODOO_HOST in env", 1);
+        // $this->url = config('OdooApi.host');
+        // if($this->url=="http://localhost") {
+        //     return throw new \Exception("Please config ODOO_HOST in env", 1);
             
-        }
-        $this->db = config('OdooApi.db');
-        $this->username = config('OdooApi.username');
-        $this->password = '';
-        $this->api_key = config('OdooApi.api_key');
+        // }
+        // $this->db = config('OdooApi.db');
+        // $this->username = config('OdooApi.username');
+        // $this->password = '';
+        // $this->api_key = config('OdooApi.api_key');
 
-        $this->common = Ripcord::client("{$this->url}/xmlrpc/2/common");
-        $this->uid = $this->auth();
-        $this->models = Ripcord::client("{$this->url}/xmlrpc/2/object");
+        // $this->common = Ripcord::client("{$this->url}/xmlrpc/2/common");
+        // $this->uid = $this->auth();
+        // $this->models = Ripcord::client("{$this->url}/xmlrpc/2/object");
     }
 
     public function auth() {
