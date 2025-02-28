@@ -115,31 +115,49 @@ class Odoo {
 
     public function get_product_variant($variant_id)
     {
+
+       
+
         try {
-            $domain = [
-                ['id', '=', (int)$variant_id]
-            ];
+            $domain = [['id', '=', (int)$variant_id]];
             $fields = [
                 'id',
                 'name',
-                'product_id',
+                // 'product_id',
                 'product_tmpl_id',
-                'attribute_value_ids',
+                // 'attribute_value_ids',
             ];
             $limit = 1;
 
+                // 使用 search 方法获取记录的 ID
+            $variant_ids = $this->models->execute_kw(
+                $this->db,
+                $this->uid,
+                $this->api_key,
+                'product.product',
+                'search',
+                [$domain],
+                ['limit' => $limit]
+            );
+
+
+            var_dump($variant_ids);exit;
+
+
+            // 使用 read 方法读取记录
             $variant = $this->models->execute_kw(
                 $this->db,
                 $this->uid,
                 $this->api_key,
                 'product.product',
-                'search_read',
-                [$domain],
-                ['fields' => $fields, 'limit' => $limit]
+                'read',
+                [$variant_ids],
+                ['fields' => $fields]
             );
 
 
-            print_r($variant);exit;
+
+            
 
             return $variant ? $variant[0] : false;
 
