@@ -645,6 +645,7 @@ class ProductsController extends Controller
         $i = 0;
         foreach($skus as $key=>$sku) {
             $Variant = [];
+            if(empty($sku['sku'])) continue;
             $sku['sku'] = !empty($sku['sku']) ? $sku['sku'] :'';
             
             // $title = "";
@@ -843,14 +844,16 @@ protected function arrayUniqueByField($array, $field) {
 
         //var_dump($skus);
         foreach($skus as $key=>$sku) {
+            if(empty($sku['sku'])) continue;
             // use the sku to find the product id and add the images to the sku
             $sku_code = $main_sku."-".$sku['sku'];
             $product = $this->productRepository->findOneByField("sku", $sku_code);
+            if(is_null($product)) continue;
             $product_id = $product->id;
             // var_dump($sku['image_id']);
             // var_dump($images[$sku['image_id']]);
             $images_url = isset($images[$sku['image_id']]) ? trim($images[$sku['image_id']]) : null;
-            if($images_url) continue;
+            if(is_null($images_url)) continue;
             // download the image url and save the image to the product
             $info = pathinfo($images_url);
         
