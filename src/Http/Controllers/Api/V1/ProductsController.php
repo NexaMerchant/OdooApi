@@ -825,6 +825,8 @@ protected function arrayUniqueByField($array, $field) {
     public function shopifyImages(Request $request) {
         $req = $request->all();
 
+        Log::info("shopifyImages: ".json_encode($req));
+
         // match the variants to the sku id
         $skus = $req['product']['variants'];
         $main_sku = $req['product']['id'];
@@ -842,7 +844,34 @@ protected function arrayUniqueByField($array, $field) {
               ),
         ); 
 
-        //var_dump($skus);
+        // the images need insert the main products
+        $product = $this->productRepository->findOneByField("sku", $main_sku);
+        
+        if(empty($product)) return false;
+
+        $productImages = [];
+        foreach($images as $key=>$image) {
+            $product_id = $product->id;
+            $images_url = $image;
+            $info = pathinfo($images_url);
+            $image_path = "product/".$product_id."/".$info['filename'].".webp";
+            $local_image_path = "storage/".$image_path;
+            if(!file_exists(public_path($local_image_path))) {
+            
+                $contents = file_get_contents($images_url, false, stream_context_create($arrContextOptions));
+                Storage::disk("images")->put($local_image_path, $contents);
+            }
+            
+            $productImages[] = [
+                'path' => env('APP_URL') . '/storage/'.$image_path,
+                'type' => 'images',
+                'position' => 1
+            ];
+        }
+
+        $product->images()->createMany($productImages);
+
+
         foreach($skus as $key=>$sku) {
             if(empty($sku['sku'])) continue;
             // use the sku to find the product id and add the images to the sku
@@ -850,14 +879,9 @@ protected function arrayUniqueByField($array, $field) {
             $product = $this->productRepository->findOneByField("sku", $sku_code);
             if(is_null($product)) continue;
             $product_id = $product->id;
-            // var_dump($sku['image_id']);
-            // var_dump($images[$sku['image_id']]);
             $images_url = isset($images[$sku['image_id']]) ? trim($images[$sku['image_id']]) : null;
             if(is_null($images_url)) continue;
-            // download the image url and save the image to the product
             $info = pathinfo($images_url);
-        
-    
             $image_path = "product/".$product_id."/".$info['filename'].".webp";
             $local_image_path = "storage/".$image_path;
             if(!file_exists(public_path($local_image_path))) {
@@ -867,7 +891,6 @@ protected function arrayUniqueByField($array, $field) {
                 Storage::disk("images")->put($local_image_path, $contents);
            
             }
-            //$image_path;
 
             $productImages = [];
             $productImages[] = [
