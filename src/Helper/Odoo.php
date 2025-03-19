@@ -24,10 +24,14 @@ class Odoo {
         $this->username = config('OdooApi.username');
         $this->password = '';
         $this->api_key = config('OdooApi.api_key');
+    }
 
+    public function init() {
+        // ...existing code...
         $this->common = Ripcord::client("{$this->url}/xmlrpc/2/common");
         $this->uid = $this->auth();
         $this->models = Ripcord::client("{$this->url}/xmlrpc/2/object");
+
     }
 
     public function auth() {

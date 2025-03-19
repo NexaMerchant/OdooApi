@@ -23,6 +23,7 @@ class Sync extends Command
     {
         $this->Order = new Order();
         $this->Odoo = new Odoo();
+        $this->Odoo->init();
         $this->productRepository = app(ProductRepository::class);
         //$this->customerRepository = app(CustomerRepository::class);
         parent::__construct();
