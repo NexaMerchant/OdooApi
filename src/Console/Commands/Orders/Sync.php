@@ -4,7 +4,6 @@ namespace NexaMerchant\OdooApi\Console\Commands\Orders;
 use Illuminate\Console\Command;
 use NexaMerchant\Apis\Docs\V1\Admin\Models\Catalog\Product;
 use Webkul\Sales\Models\Order;
-use NexaMerchant\OdooApi\Helper\Odoo;
 use Webkul\Product\Repositories\ProductRepository;
 
 class Sync extends Command
