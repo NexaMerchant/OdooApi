@@ -8,7 +8,7 @@ use Webkul\Product\Repositories\ProductRepository;
 
 class Sync extends Command
 {
-    protected $signature = 'odoo:orders:sync {--order-id=}';
+    protected $signature = 'OdooApi:orders:sync {--order-id=}';
 
     protected $description = 'Sync orders from the main database to the shop database odoo:orders:sync {--order-id=}';
 

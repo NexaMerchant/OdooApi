@@ -19,7 +19,7 @@ class Install extends CommandInterface
     protected $description = 'Install OdooApi an app';
 
     public function getAppVer() {
-        return config("OdooApi.ver");
+        return config("OdooApi.version");
     }
 
     public function getAppName() {

@@ -7,7 +7,7 @@ use Obuchmann\OdooJsonRpc\Odoo\Request\Arguments\Domain;
 
 class Sync extends Command
 {
-    protected $signature = 'odoo:products:sync {--prod-id=}';
+    protected $signature = 'OdooApi:products:sync {--prod-id=}';
 
     protected $description = 'Sync products from the main database to the shop database odoo:products:sync {--prod-id=}';
 
@@ -53,8 +53,11 @@ class Sync extends Command
 
         $this->info('Connected to Odoo '. $localProduct->sku);
 
-        $odooProduct = $odoo->find('product.template', 246);
+        $odooProductTemplate = $odoo->find('product.template', 246);
+        //var_dump($odooProductTemplate);
+        $odooProduct = $odoo->model('product.product')->where('product_tmpl_id', '=', $odooProductTemplate->id)->get();
         var_dump($odooProduct);
+        exit;
         $product = $odoo->model('product.template')
             ->where('default_code', '=', $localProduct->sku)
             ->first();

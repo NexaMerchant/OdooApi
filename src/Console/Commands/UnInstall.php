@@ -19,7 +19,7 @@ class UnInstall extends CommandInterface
     protected $description = 'Uninstall OdooApi an app';
 
     public function getAppVer() {
-        return config("OdooApi.ver");
+        return config("OdooApi.version");
     }
 
     public function getAppName() {
