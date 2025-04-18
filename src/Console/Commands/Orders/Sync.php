@@ -5,6 +5,8 @@ use Illuminate\Console\Command;
 use NexaMerchant\Apis\Docs\V1\Admin\Models\Catalog\Product;
 use Webkul\Sales\Models\Order;
 use Webkul\Product\Repositories\ProductRepository;
+use Obuchmann\OdooJsonRpc\Odoo;
+use Obuchmann\OdooJsonRpc\Odoo\Request\Arguments\Domain;
 
 class Sync extends Command
 {
@@ -17,6 +19,14 @@ class Sync extends Command
 
     protected $productRepository;
 
+    private $host;
+    private $username;
+    private $password;
+    private $database;
+
+    private $odooProductTemplate;
+    private $odooOrder;
+
     public function __construct(
     )
     {
@@ -24,12 +34,25 @@ class Sync extends Command
         // $this->Odoo = new Odoo();
         // $this->Odoo->init();
         $this->productRepository = app(ProductRepository::class);
-        //$this->customerRepository = app(CustomerRepository::class);
+        
+        
+
+
         parent::__construct();
     }
 
     public function handle()
     {
+
+        $this->host = config('OdooApi.host');
+        $this->username = config('OdooApi.username');
+        $this->password = config('OdooApi.password');
+        $this->database = config('OdooApi.db');
+
+        // Connect to Odoo
+        $this->Odoo = new Odoo(new Odoo\Config($this->database, $this->host, $this->username, $this->password));
+        $this->Odoo->connect();
+
         // $this->info('Syncing orders...');
 
         $order_id = $this->option('order-id');
@@ -42,16 +65,7 @@ class Sync extends Command
         $shipping_address = $order->shipping_address;//发货信息
         $products = $order->items;//商品信息
 
-
-    //   $res = $this->Odoo->get_product_variant(12638);
-        // var_dump($products);exit;
-
-
-        //$products = $order->items->toArray();
-
         $products = $order->items->toArray();
-
-        // print_r($products);exit;
 
 
         foreach($products as $key=>$value) {
@@ -61,43 +75,30 @@ class Sync extends Command
 
             $product = $this->productRepository->find($product_id);
 
-            // $super_attribute = $product->super_attributes;
+            $super_attribute = $product->super_attributes;
 
-           
+            // get super attribute options
+            $options = [];
+            foreach($super_attribute as $k=>$v){
+                $options[] = $v->options->toArray();
+            }
+
+            
 
             $productViewHelper = new \Webkul\Product\Helpers\ConfigurableOption();
             $attributes = $productViewHelper->getConfigurationConfig($product);
 
-            //  print_r($product);exit;
-
-            // $options = [];
-            // foreach($attributes as $k=>$v){
-            //  $options = [
-            //      'attribute_id' => $v['attribute_id'],
-            //      'option_id' => $v['option_id']
-            //  ];
-            // }
  
-             $product_variants = $product->variants->toArray();
-             // $product['variants'] = $variants;
- 
- 
+            $product_variants = $product->variants->toArray();
 
-            // foreach($product_variants as $variant){
-
-            // }
-
-            // print_r($product_id);exit;
-
-            // $product = $this->productRepository->find($product_id)->toArray();
 
             foreach($product_variants as $variant){
-
-
-               // print_r($variant['id']);exit;
-                $res = $this->Odoo->get_product_variant($variant['id']);
-                print_r($res);exit;
+                var_dump($variant['id']);
+                var_dump($variant['sku']);exit;
             }
+
+
+            exit;
 
 
 
