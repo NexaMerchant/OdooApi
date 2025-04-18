@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasTable('ba_odoo_orders')) {
+        if (!Schema::hasTable('odoo_customers')) {
             Schema::create('odoo_customers', function (Blueprint $table) {
                 // 主键
                 $table->bigIncrements('id')->comment('客户ID');

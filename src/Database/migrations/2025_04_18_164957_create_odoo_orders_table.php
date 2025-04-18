@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasTable('ba_odoo_orders')) {
+        if (!Schema::hasTable('odoo_orders')) {
             Schema::create('odoo_orders', function (Blueprint $table) {
                 $table->id();
 
