@@ -1,26 +1,21 @@
 <?php
+
 namespace NexaMerchant\OdooApi\Http\Controllers\Api\V1;
 
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Event;
 use Webkul\Product\Repositories\ProductRepository;
 use Illuminate\Http\Request;
-use Webkul\Core\Rules\Slug;
-use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use NexaMerchant\OdooApi\Http\Controllers\Api\Controller;
-use Symfony\Component\HttpKernel\HttpCache\Store;
 
 class ProductsController extends Controller
 {
 
     public function __construct(
         protected ProductRepository $productRepository,
-    )
-    {
-        
-    }
+    ) {}
 
     public function index(Request $request)
     {
@@ -33,13 +28,14 @@ class ProductsController extends Controller
     }
 
 
-    public function syncProductToLocal($shopify_pro_id) {
+    public function syncProductToLocal($shopify_pro_id)
+    {
 
         $option1 = "color";
         $option2 = "size";
 
         $items = \Nicelizhi\Shopify\Models\ShopifyProduct::where("shopify_store_id", $this->shopify_store_id)->where("product_id", $shopify_pro_id)->get();
-        foreach($items as $key=>$item) {
+        foreach ($items as $key => $item) {
             $this->info($item['product_id']);
 
             $redis = Redis::connection('default');
@@ -49,12 +45,12 @@ class ProductsController extends Controller
             $options = $item->options;
             $shopifyVariants = $item->variants;
             $shopifyImages = $item->images;
-            
-            foreach($shopifyImages as $key=>$shopifyImage) {
+
+            foreach ($shopifyImages as $key => $shopifyImage) {
                 //var_dump($shopifyImage);
-                
+
                 $images_map[$shopifyImage['id']] = $shopifyImage['src'];
-                foreach($shopifyImage['variant_ids'] as $kk=>$variant_ids) {
+                foreach ($shopifyImage['variant_ids'] as $kk => $variant_ids) {
                     //var_dump($variant_ids);
                     $images_map[$variant_ids] = $shopifyImage['src'];
                 }
@@ -66,12 +62,12 @@ class ProductsController extends Controller
             $LocalOptions = [];
             $LocalOptions = \Nicelizhi\Shopify\Helpers\Utils::createOptions($options);
 
-           //var_dump($LocalOptions, $options);exit;
+            //var_dump($LocalOptions, $options);exit;
 
             $color = $LocalOptions['color'];
             $size = $LocalOptions['size'];
             //var_dump($LocalOptions);
-            
+
             // add product
 
             $data = [];
@@ -86,26 +82,25 @@ class ProductsController extends Controller
 
             // check product info
             $product = $this->productRepository->where("sku", $item['product_id'])->first();
-            if(is_null($product)) {
+            if (is_null($product)) {
                 Event::dispatch('catalog.product.create.before');
                 $product = $this->productRepository->create($data);
                 $id = $product->id;
                 Event::dispatch('catalog.product.create.after', $product);
-            }else{
+            } else {
 
                 $method = "update";
                 $id = $product->id;
-   
             }
 
-       
+
             \Nicelizhi\Shopify\Helpers\Utils::clearCache($id, $item['product_id']); // clear cache
 
             // update the sku sort
-            foreach($LocalOptions['LocalOptions'] as $key=>$LocalOption) {
-                $cache_key = "product_attr_sort_".$key."_".$id;
-                echo $cache_key."\r\n";
-                foreach($LocalOption as $k => $localOpt) {
+            foreach ($LocalOptions['LocalOptions'] as $key => $LocalOption) {
+                $cache_key = "product_attr_sort_" . $key . "_" . $id;
+                echo $cache_key . "\r\n";
+                foreach ($LocalOption as $k => $localOpt) {
                     $redis->hSet($cache_key, $localOpt,  $k);
                 }
                 //$redis->hSet($this->cache_key.$this->prod_id, $key, json_encode($value));
@@ -133,7 +128,7 @@ class ProductsController extends Controller
 
             $updateData['description'] = $item['body_html'];
 
-           // $updateData['compare_at_price'] = $item['compare_at_price'];
+            // $updateData['compare_at_price'] = $item['compare_at_price'];
             $updateData['compare_at_price'] = $shopifyVariants[0]['compare_at_price'];
             $updateData['price'] = $shopifyVariants[0]['price'];
 
@@ -141,27 +136,27 @@ class ProductsController extends Controller
 
             $newShopifyVarants = [];
             $compare_at_price = '0.00';
-            foreach($shopifyVariants as $sv => $shopifyVariant) {
+            foreach ($shopifyVariants as $sv => $shopifyVariant) {
                 //var_dump($shopifyVariant);
                 $newkey = $shopifyVariant['product_id'];
                 $color = AttributeOption::where("attribute_id", 23)->where("admin_name", $shopifyVariant['option1'])->first();
-                if(is_null($color)) {
+                if (is_null($color)) {
                     $option1 = "size";
                     $color = AttributeOption::where("attribute_id", 23)->where("admin_name", $shopifyVariant['option2'])->first();
                 }
                 $size = AttributeOption::where("attribute_id", 24)->where("admin_name", $shopifyVariant['option2'])->first();
-                if(is_null($size)) {
+                if (is_null($size)) {
                     $option1 = "color";
                     $size = AttributeOption::where("attribute_id", 24)->where("admin_name", $shopifyVariant['option1'])->first();
                 }
 
-                if(is_null($color) || is_null($size)) {
+                if (is_null($color) || is_null($size)) {
                     $this->info("error");
-                    var_dump($color, $size, $shopifyVariant['option1'],$shopifyVariant['option2'], $shopifyVariant);
+                    var_dump($color, $size, $shopifyVariant['option1'], $shopifyVariant['option2'], $shopifyVariant);
                     exit;
                 }
 
-                $newkey .="_".$color->id."_".$size->id;
+                $newkey .= "_" . $color->id . "_" . $size->id;
 
                 $newShopifyVarant = [];
 
@@ -170,11 +165,11 @@ class ProductsController extends Controller
                 $newShopifyVarant['title'] = $shopifyVariant['title'];
                 $newShopifyVarant['weight'] = isset($shopifyVariant['weight']) ? $shopifyVariant['weight'] : 0;
                 $newShopifyVarant['sku'] = $shopifyVariant['sku'];
-                $newShopifyVarant['option1'] = $option1=="color" ?  $shopifyVariant['option1'] : $shopifyVariant['option2'];
-                $newShopifyVarant['option2'] = $option2=="size" ? $shopifyVariant['option2'] : $shopifyVariant['option1'];
-                if(!isset($images_map[$shopifyVariant['image_id']])) {
+                $newShopifyVarant['option1'] = $option1 == "color" ?  $shopifyVariant['option1'] : $shopifyVariant['option2'];
+                $newShopifyVarant['option2'] = $option2 == "size" ? $shopifyVariant['option2'] : $shopifyVariant['option1'];
+                if (!isset($images_map[$shopifyVariant['image_id']])) {
                     // send message to wecome
-                    \Nicelizhi\Shopify\Helpers\Utils::send(config("app.name").' '.$item['product_id']. " sku image not found, please check it ");
+                    \Nicelizhi\Shopify\Helpers\Utils::send(config("app.name") . ' ' . $item['product_id'] . " sku image not found, please check it ");
                     return $this->error("image not found");
                 }
                 $newShopifyVarant['image_src'] = $images_map[$shopifyVariant['image_id']];
@@ -185,7 +180,7 @@ class ProductsController extends Controller
             //var_dump($newShopifyVarants);exit;
 
             /**
-             * 
+             *
              * variants[440][sku]: 8007538966776-variant-1375-1376
              * variants[440][name]: Variant 1375 1376
              * variants[440][price]: 0.0000
@@ -194,21 +189,21 @@ class ProductsController extends Controller
              * variants[440][color]: 1375
              * variants[440][size]: 1376
              * variants[440][inventories][1]: 0
-             * 
-             * 
+             *
+             *
              */
             $newVariants = [];
-            foreach($variants as $k => $variant) {
+            foreach ($variants as $k => $variant) {
                 //Log::info(json_encode($variant));
                 //var_dump($variant);
-                $newkey = $item['product_id']."_".$variant['color']."_".$variant['size'];
-                if($variant['size']=='1403') {
+                $newkey = $item['product_id'] . "_" . $variant['color'] . "_" . $variant['size'];
+                if ($variant['size'] == '1403') {
                     //var_dump($variant);exit;
                 }
                 $this->info($newkey);
-                if(!isset($newShopifyVarants[$newkey])) continue;
+                if (!isset($newShopifyVarants[$newkey])) continue;
                 //var_dump($newkey);exit;
-                $newVariant['sku'] = $item['product_id'].'-'.$newShopifyVarants[$newkey]['id'];
+                $newVariant['sku'] = $item['product_id'] . '-' . $newShopifyVarants[$newkey]['id'];
                 $newVariant['name'] = $newShopifyVarants[$newkey]['title'];
                 $newVariant['price'] = $newShopifyVarants[$newkey]['price'];
                 $newVariant['weight'] = "1000";
@@ -228,16 +223,16 @@ class ProductsController extends Controller
             $updateData['variants'] = $newVariants;
 
             // while method  eq update
-            if($method=="update") {
-                $newVariants = []; 
+            if ($method == "update") {
+                $newVariants = [];
                 $i = 1;
                 $variant_images = [];
-                foreach($shopifyVariants as $key=>$shopifyVariant) {
+                foreach ($shopifyVariants as $key => $shopifyVariant) {
                     $variant_images[$shopifyVariant['id']] = $shopifyVariant['image_id'];
                     //var_dump($shopifyVariant);
                     $newVariant = [];
-                    $newVariant['sku'] = $item['product_id'].'-'.$shopifyVariant['id'];
-                    $newVariant['name'] = $shopifyVariant['title']; 
+                    $newVariant['sku'] = $item['product_id'] . '-' . $shopifyVariant['id'];
+                    $newVariant['name'] = $shopifyVariant['title'];
                     $newVariant['price'] = $shopifyVariant['price'];
                     $newVariant['weight'] = "1000";
                     $newVariant['status'] = 1;
@@ -246,7 +241,7 @@ class ProductsController extends Controller
                     $newVariant['color'] = $this->getAttr($LocalOptions['color_mapp'], $shopifyVariant['option1'], $shopifyVariant['option2'], $shopifyVariant['option3']);
                     $newVariant['size'] = $this->getAttr($LocalOptions['size_mapp'], $shopifyVariant['option1'], $shopifyVariant['option2'], $shopifyVariant['option3']);
 
-                    
+
 
                     $newVariant['inventories'][1] = 1000;
                     $categories = [];
@@ -257,20 +252,20 @@ class ProductsController extends Controller
 
                     //base use sku for the variant check
 
-                    $variant = $this->productRepository->where("sku", $item['product_id'].'-'.$shopifyVariant['id'])->select(['id'])->first();
+                    $variant = $this->productRepository->where("sku", $item['product_id'] . '-' . $shopifyVariant['id'])->select(['id'])->first();
 
                     //need update the product size
 
-                    if(is_null($variant)) {
-                        $this->error($shopifyVariant['title'].'--'.$newVariant['color'].'--'.$newVariant['size'].'--variant_'.$i);
-                        $newVariants["variant_".$i] = $newVariant;
-                    }else{
+                    if (is_null($variant)) {
+                        $this->error($shopifyVariant['title'] . '--' . $newVariant['color'] . '--' . $newVariant['size'] . '--variant_' . $i);
+                        $newVariants["variant_" . $i] = $newVariant;
+                    } else {
                         $var_product = [];
 
-                       // $var_product['new'] = 1;
-                       // $var_product['featured'] = 1;
+                        // $var_product['new'] = 1;
+                        // $var_product['featured'] = 1;
                         $var_product['visible_individually'] = 1;
-                        $var_product['name'] = $shopifyVariant['title']; 
+                        $var_product['name'] = $shopifyVariant['title'];
                         $var_product['status'] = 1;
                         $var_product['guest_checkout'] = 1;
                         $var_product['channel'] = $this->channel;
@@ -287,7 +282,7 @@ class ProductsController extends Controller
 
 
 
-                        $this->error($shopifyVariant['title'].'--'.$newVariant['color'].'--'.$newVariant['size'].'--'.$variant->id);
+                        $this->error($shopifyVariant['title'] . '--' . $newVariant['color'] . '--' . $newVariant['size'] . '--' . $variant->id);
                         $newVariants[$variant->id] = $newVariant;
                     }
                     $i++;
@@ -297,33 +292,33 @@ class ProductsController extends Controller
                 //var_dump($updateData['variants']);
             }
             /**
-             * 
-             * 
-             * 
-             * images[files][32]: 
+             *
+             *
+             *
+             * images[files][32]:
              * images[files][]: （二进制）
-             * 
-             * 
+             *
+             *
              */
 
-             $arrContextOptions=array(
-                "ssl"=>array(
-                      "verify_peer"=>false,
-                      "verify_peer_name"=>false,
-                  ),
-              ); 
+            $arrContextOptions = array(
+                "ssl" => array(
+                    "verify_peer" => false,
+                    "verify_peer_name" => false,
+                ),
+            );
             $images = [];
-            foreach($shopifyImages as $key=>$shopifyImage) {
+            foreach ($shopifyImages as $key => $shopifyImage) {
 
                 $info = pathinfo($shopifyImage['src']);
 
 
                 $this->info($info['filename']);
-                $image_path = "product/".$id."/".$info['filename'].".webp";
-                $local_image_path = "storage/".$image_path;
+                $image_path = "product/" . $id . "/" . $info['filename'] . ".webp";
+                $local_image_path = "storage/" . $image_path;
                 $this->info(public_path($local_image_path));
-                if(!file_exists(public_path($local_image_path))) {
-                    $this->error("copy [ ".$local_image_path);
+                if (!file_exists(public_path($local_image_path))) {
+                    $this->error("copy [ " . $local_image_path);
                     $this->info($shopifyImage['src']);
                     $contents = file_get_contents($shopifyImage['src'], false, stream_context_create($arrContextOptions));
                     //var_dump($contents);
@@ -345,10 +340,10 @@ class ProductsController extends Controller
 
             //更新对应的分类
             $sku_products = $this->productRepository->where("parent_id", $id)->get();
-            foreach($sku_products as $key=>$sku) {
+            foreach ($sku_products as $key => $sku) {
 
                 $sku_image = explode("-", $sku->sku);
-                $this->info("process ".$sku->id);
+                $this->info("process " . $sku->id);
 
                 Event::dispatch('catalog.product.create.after', $sku);
 
@@ -370,24 +365,24 @@ class ProductsController extends Controller
 
                 $images = [];
                 $shopifyImages = [];
-                $shopifyImages[] = ['src'=> $images_map[$sku_image[1]] ];
-                foreach($shopifyImages as $key=>$shopifyImage) {
+                $shopifyImages[] = ['src' => $images_map[$sku_image[1]]];
+                foreach ($shopifyImages as $key => $shopifyImage) {
 
                     $this->error($sku->id);
                     $this->error($shopifyImage['src']);
 
                     //var_dump($shopifyImage);
                     $info = pathinfo($shopifyImage['src']);
-    
+
                     //var_dump($shopifyImage);
-    
+
                     $this->info($info['filename']);
-    
-                    $image_path = "product/".$sku->id."/".$info['filename'].".webp";
-                    $local_image_path = "storage/".$image_path;
+
+                    $image_path = "product/" . $sku->id . "/" . $info['filename'] . ".webp";
+                    $local_image_path = "storage/" . $image_path;
                     $this->info(public_path($local_image_path));
-                    if(!file_exists(public_path($local_image_path))) {
-                        $this->error("copy [ ".$local_image_path);
+                    if (!file_exists(public_path($local_image_path))) {
+                        $this->error("copy [ " . $local_image_path);
                         $this->info($shopifyImage['src']);
                         $contents = file_get_contents($shopifyImage['src'], false, stream_context_create($arrContextOptions));
                         Storage::disk("images")->put($local_image_path, $contents);
@@ -397,11 +392,11 @@ class ProductsController extends Controller
                 }
                 $max_image_count = 3;
                 $i = 0;
-                foreach($images as $key=>$image) {
+                foreach ($images as $key => $image) {
                     $i++;
-                    if($max_image_count < $i) continue;
+                    if ($max_image_count < $i) continue;
                     $checkImg = ProductImage::where("product_id", $sku->id)->where("path", $image)->first();
-                    if(is_null($checkImg)) {
+                    if (is_null($checkImg)) {
                         $checkImg = new ProductImage();
                         $checkImg->product_id = $sku->id;
                         $checkImg->path = $image;
@@ -409,29 +404,22 @@ class ProductsController extends Controller
                         $checkImg->save();
                     }
                 }
-
-
-
             }
 
 
             // exit;
-            Cache::pull("sync_".$item['product_id']);
+            Cache::pull("sync_" . $item['product_id']);
 
             \Nicelizhi\Shopify\Helpers\Utils::clearCache($id, $item['product_id']); // clear cache
 
             //send message to wecome
-            \Nicelizhi\Shopify\Helpers\Utils::send(config("app.name").' '.$item['product_id']. " sync done, please check it ");
-
-
-
+            \Nicelizhi\Shopify\Helpers\Utils::send(config("app.name") . ' ' . $item['product_id'] . " sync done, please check it ");
         }
-
-
     }
 
 
-    function getSrcById($images, $targetId) {
+    function getSrcById($images, $targetId)
+    {
         foreach ($images as $image) {
             if ($image['id'] == $targetId) {
                 return $image['src'];
@@ -440,11 +428,12 @@ class ProductsController extends Controller
         return null; // 如果未匹配到返回 null
     }
 
-   
 
-    public function shopify(Request $request) {
+
+    public function shopify(Request $request)
+    {
         $req = $request->all();
-        //$req['product']['id'] = time(); // for test 
+        //$req['product']['id'] = time(); // for test
         $input = [];
         $input['sku'] = $req['product']['id'];
         $input['type'] = 'configurable';
@@ -458,15 +447,13 @@ class ProductsController extends Controller
         //check if the attribute family is exist
         $attributeFamily = $attributeFamilyRepository->findOneByField('code', $input['sku']);
 
-
-
         $attribute_group_id = 0;
         $action = 'create';
 
-        if(!$attributeFamily){
+        if (!$attributeFamily) {
             Event::dispatch('catalog.attribute_family.create.before');
             $attributeFamily = $attributeFamilyRepository->create([
-                'code' =>$input['sku'],
+                'code' => $input['sku'],
                 'name' => $input['sku'],
                 'status' => 1,
                 'is_user_defined' => 1
@@ -491,13 +478,13 @@ class ProductsController extends Controller
             $attributeGroupItems = $attributeGroupRepository->where('attribute_family_id', $attributeFamily->id)->limit(1)->get();
 
             //var_dump($attributeGroupItems);exit;
-            
-            foreach($attributeGroupItems as $attributeGroupItem) {
-                $attributeGroupMapping = DB::table('attribute_group_mappings')->where("attribute_id", )->where("attribute_group_id", $attributeGroupItem->id)->first();
-                if(!$attributeGroupMapping){
+
+            foreach ($attributeGroupItems as $attributeGroupItem) {
+                $attributeGroupMapping = DB::table('attribute_group_mappings')->where("attribute_id",)->where("attribute_group_id", $attributeGroupItem->id)->first();
+                if (!$attributeGroupMapping) {
                     $attributeMaxID = 32;
                     $attributeGroupMappingDatas = [];
-                    for($i=1;$i<=$attributeMaxID;$i++){
+                    for ($i = 1; $i <= $attributeMaxID; $i++) {
 
                         // check if the attribute group mapping is have the attribute
                         $attributeGroupMappingData = [
@@ -508,11 +495,10 @@ class ProductsController extends Controller
                         $attributeGroupMappingDatas[] = $attributeGroupMappingData;
                     }
                     DB::table('attribute_group_mappings')->insert($attributeGroupMappingDatas);
-                    
                 }
                 $attribute_group_id = $attributeGroupItem->id;
             }
-        }else{
+        } else {
             $attributeGroupRepository = app('Webkul\Attribute\Repositories\AttributeGroupRepository');
             $attributeGroup = $attributeGroupRepository->findOneByField('attribute_family_id', $attributeFamily->id);
             $attribute_group_id = $attributeGroup->id;
@@ -528,14 +514,14 @@ class ProductsController extends Controller
         foreach ($req['product']['options'] as $attribute) {
             //var_dump($attribute['values']);
 
-            $code = "attr_".$input['attribute_family_id']."_".md5($attribute['name']);
+            $code = "attr_" . $input['attribute_family_id'] . "_" . md5($attribute['name']);
             $super_attributes_label[$attribute['position']] = $code;
 
             // create a unique code for the attribute
             //findOneByField 基于某个字段查找
             $attributeRepos = $attributeRepository->findOneByField('code', $code);
             //  var_dump($code);exit;
-            if(!$attributeRepos){
+            if (!$attributeRepos) {
                 // attribute not found and create a new attribute
                 Event::dispatch('catalog.attribute.create.before');
                 $attributeRepos = $attributeRepository->create([
@@ -568,8 +554,8 @@ class ProductsController extends Controller
             $attributeOptionRepository = app('Webkul\Attribute\Repositories\AttributeOptionRepository');
             $attributeOptionArray = [];
             foreach ($attribute['values'] as $option) {
-                $attributeOption = $attributeOptionRepository->findOneByField(['admin_name'=>$option, 'attribute_id'=>$attributeRepos->id]);
-                if(!$attributeOption){
+                $attributeOption = $attributeOptionRepository->findOneByField(['admin_name' => $option, 'attribute_id' => $attributeRepos->id]);
+                if (!$attributeOption) {
                     $attributeOption = $attributeOptionRepository->create([
                         'admin_name' => $option,
                         'sort_order' => $attribute['position'],
@@ -592,9 +578,9 @@ class ProductsController extends Controller
 
         //add attribut id to attribute_group_mappings
         $attributeGroupMappingRespos = app();
-        foreach($super_attributes_ids as $key=>$super_attributes_id) {
+        foreach ($super_attributes_ids as $key => $super_attributes_id) {
             $attribute_group_mapping = DB::table('attribute_group_mappings')->where("attribute_id", $super_attributes_id)->where("attribute_group_id", $attribute_group_id)->first();
-            if(!$attribute_group_mapping){
+            if (!$attribute_group_mapping) {
                 DB::table('attribute_group_mappings')->insert([
                     'attribute_id' => $super_attributes_id,
                     'attribute_group_id' => $attribute_group_id
@@ -606,20 +592,16 @@ class ProductsController extends Controller
         //findBySlug 基于url-key查找产品
         $product = $this->productRepository->findBySlug($req['product']['handle']);
 
-        if(!is_null($product)) {
+        if (!is_null($product)) {
             $id = $product->id;
             $action = 'update';
-
-        }else{
+        } else {
             Event::dispatch('catalog.product.create.before');
 
             $product = $this->productRepository->create($input);
             Event::dispatch('catalog.product.create.after', $product);
             $id = $product->id;
         }
-
-        $multiselectAttributeCodes = [];
-        $productAttributes = $this->productRepository->findOrFail($id);
 
         Event::dispatch('catalog.product.update.before', $id);
 
@@ -630,12 +612,11 @@ class ProductsController extends Controller
         $categories[] = 5; // add the default category
 
         $Variants = [];
-        $VariantsImages = [];
 
         $variantCollection = $product->variants()->get()->toArray(); // get the variants of the product
         $variantCollection = array_column($variantCollection, null, 'sku');
 
-        if($action =='create') {
+        if ($action == 'create') {
             $product->variants()->delete(); // delete the variants of the product
         }
 
@@ -643,11 +624,11 @@ class ProductsController extends Controller
         $skus = $req['product']['variants'];
 
         $i = 0;
-        foreach($skus as $key=>$sku) {
+        foreach ($skus as $key => $sku) {
             $Variant = [];
-            if(empty($sku['sku'])) continue;
-            $sku['sku'] = !empty($sku['sku']) ? $sku['sku'] :'';
-            
+            if (empty($sku['sku'])) continue;
+            $sku['sku'] = !empty($sku['sku']) ? $sku['sku'] : '';
+
             // $title = "";
             // if(!empty($sku['option1'])) $title .= $sku['option1'];
             // if(!empty($sku['option2'])) $title .= "-".$sku['option2'];
@@ -675,13 +656,12 @@ class ProductsController extends Controller
             $option3 = isset($super_attributes_label[3]) ? $super_attributes_label[3] : null;
 
             //if($option1) $Variant[$option1] = $sku['option1'];
-            if($option1) $Variant[$option1] = $this->findAttributeOptionID($option1, $sku['option1']);
-            if($option2) $Variant[$option2] = $this->findAttributeOptionID($option2, $sku['option2']);
-            if($option3) $Variant[$option3] = $this->findAttributeOptionID($option3, $sku['option3']);
-            
-            
-            $Variant['sku'] = $input['sku'].'-'. $sku['sku'];
-            $Variants["variant_".$i] = $Variant;
+            if ($option1) $Variant[$option1] = $this->findAttributeOptionID($option1, $sku['option1']);
+            if ($option2) $Variant[$option2] = $this->findAttributeOptionID($option2, $sku['option2']);
+            if ($option3) $Variant[$option3] = $this->findAttributeOptionID($option3, $sku['option3']);
+
+            $Variant['sku'] = $input['sku'] . '-' . $sku['sku'];
+            $Variants["variant_" . $i] = $Variant;
             $i++;
         }
 
@@ -693,7 +673,7 @@ class ProductsController extends Controller
         $tableData['new'] = 1;
         $tableData['guest_checkout'] = 1;
         $tableData['status'] = 1;
-        $tableData['description'] = $req['product']['body_html'];
+        $tableData['description'] = $this->downlowdShopifyMediaToLocal($req['product']['body_html'], $id);
         $tableData['price'] = $req['product']['variants'][0]['price'];
         $tableData['compare_at_price'] = $req['product']['variants'][0]['compare_at_price'];
         $tableData['visible_individually'] = 1;
@@ -717,22 +697,20 @@ class ProductsController extends Controller
 
 
         $images = [];
-        foreach($req['product']['variants'] as $m=>$n) {
+        foreach ($req['product']['variants'] as $m => $n) {
 
-            if(!empty($n['image_id'])){
-                $images[$m]['url'] = $this->getAttr($id, $req,$n['image_id']);
+            if (!empty($n['image_id'])) {
+                $images[$m]['url'] = $this->getAttr($id, $req, $n['image_id']);
             }
-
-
         }
-    
+
 
         $productImages = [];
         $uniquePaths = []; // 用于存储已处理过的 path 值
-        
+
         foreach ($images as $key => $image) {
             $path = env('APP_URL') . '/storage/' . $image['url'];
-        
+
             // 如果 path 不在已处理列表中，则加入结果数组
             if (!in_array($path, $uniquePaths, true)) {
                 $uniquePaths[] = $path; // 记录已处理的 path
@@ -743,7 +721,7 @@ class ProductsController extends Controller
                 ];
             }
         }
-        
+
         // 输出去重后的数组
         print_r($productImages);
 
@@ -757,75 +735,78 @@ class ProductsController extends Controller
     }
 
 
-// 根据字段去重
-protected function arrayUniqueByField($array, $field) {
-    $uniqueValues = []; // 存储已出现的字段值
-    $result = [];       // 存储去重后的数组
+    // 根据字段去重
+    protected function arrayUniqueByField($array, $field)
+    {
+        $uniqueValues = []; // 存储已出现的字段值
+        $result = [];       // 存储去重后的数组
 
-    foreach ($array as $item) {
-        if (!in_array($item[$field], $uniqueValues)) {
-            $uniqueValues[] = $item[$field]; // 记录已出现的字段值
-            $result[] = $item;               // 将当前项加入结果
+        foreach ($array as $item) {
+            if (!in_array($item[$field], $uniqueValues)) {
+                $uniqueValues[] = $item[$field]; // 记录已出现的字段值
+                $result[] = $item;               // 将当前项加入结果
+            }
         }
+
+        return $result;
     }
 
-    return $result;
-}
+    protected function getAttr($product_id, $req, $image_id)
+    {
 
-    protected function getAttr($product_id, $req,$image_id) {
+        $arrContextOptions = array(
+            "ssl" => array(
+                "verify_peer" => false,
+                "verify_peer_name" => false,
+            ),
+        );
 
-        $arrContextOptions=array(
-            "ssl"=>array(
-                  "verify_peer"=>false,
-                  "verify_peer_name"=>false,
-              ),
-          ); 
-        
-        
-          $images_url = $this->getSrcById($req['product']['images'], $image_id);
-          $info = pathinfo($images_url);
-        
-    
-         $image_path = "product/".$product_id."/".$info['filename'].".webp";
-         $local_image_path = "storage/".$image_path;
-         
-         if(!file_exists(public_path($local_image_path))) {
-            
-             $req['product']['image']['src'];
-             $contents = file_get_contents($images_url, false, stream_context_create($arrContextOptions));
-             //var_dump($contents);  Storage
-             Storage::disk("images")->put($local_image_path, $contents);
-        
-         }
-         $images = $image_path;
+
+        $images_url = $this->getSrcById($req['product']['images'], $image_id);
+        $info = pathinfo($images_url);
+
+
+        $image_path = "product/" . $product_id . "/" . $info['filename'] . ".webp";
+        $local_image_path = "storage/" . $image_path;
+
+        if (!file_exists(public_path($local_image_path))) {
+
+            $req['product']['image']['src'];
+            $contents = file_get_contents($images_url, false, stream_context_create($arrContextOptions));
+            //var_dump($contents);  Storage
+            Storage::disk("images")->put($local_image_path, $contents);
+        }
+        $images = $image_path;
         return $images;
     }
 
 
-    public function findAttributeOptionID($attribute_id, $attribute_value) {
+    public function findAttributeOptionID($attribute_id, $attribute_value)
+    {
 
         //
         $attributeRepository = app('Webkul\Attribute\Repositories\AttributeRepository');
-    
+
         $attribute = $attributeRepository->findOneByField('code', $attribute_id);
-        if(!$attribute) return 0;
-    
-        Log::info("findAttributeOptionID: ".$attribute->id." ".$attribute_value);
-    
+        if (!$attribute) return 0;
+
+        Log::info("findAttributeOptionID: " . $attribute->id . " " . $attribute_value);
+
         //
         $attributeOptionRepository = app('Webkul\Attribute\Repositories\AttributeOptionRepository');
-        $attributeOption = $attributeOptionRepository->findOneByField(['admin_name'=>$attribute_value, 'attribute_id'=>$attribute->id]);
-        if($attributeOption){
+        $attributeOption = $attributeOptionRepository->findOneByField(['admin_name' => $attribute_value, 'attribute_id' => $attribute->id]);
+        if ($attributeOption) {
             return $attributeOption->id;
         }
         return 0;
     }
 
     // shopify images save
-    public function shopifyImages(Request $request) {
+    public function shopifyImages(Request $request)
+    {
         $req = $request->all();
 
-        Log::info("shopifyImages: ".json_encode($req));
+        Log::info("shopifyImages: " . json_encode($req));
 
         // match the variants to the sku id
         $skus = $req['product']['variants'];
@@ -833,37 +814,37 @@ protected function arrayUniqueByField($array, $field) {
 
         //product images
         $images = [];
-        foreach($req['product']['images'] as $key=>$image) {
+        foreach ($req['product']['images'] as $key => $image) {
             $images[$image['id']] = $image['src'];
         }
 
-        $arrContextOptions=array(
-            "ssl"=>array(
-                  "verify_peer"=>false,
-                  "verify_peer_name"=>false,
-              ),
-        ); 
+        $arrContextOptions = array(
+            "ssl" => array(
+                "verify_peer" => false,
+                "verify_peer_name" => false,
+            ),
+        );
 
         // the images need insert the main products
         $product = $this->productRepository->findOneByField("sku", $main_sku);
-        
-        if(empty($product)) return false;
+
+        if (empty($product)) return false;
 
         $productImages = [];
-        foreach($images as $key=>$image) {
+        foreach ($images as $image) {
             $product_id = $product->id;
             $images_url = $image;
             $info = pathinfo($images_url);
-            $image_path = "product/".$product_id."/".$info['filename'].".webp";
-            $local_image_path = "storage/".$image_path;
-            if(!file_exists(public_path($local_image_path))) {
-            
+            $image_path = "product/" . $product_id . "/" . $info['filename'] . ".webp";
+            $local_image_path = "storage/" . $image_path;
+            if (!file_exists(public_path($local_image_path))) {
+
                 $contents = file_get_contents($images_url, false, stream_context_create($arrContextOptions));
                 Storage::disk("images")->put($local_image_path, $contents);
             }
-            
+
             $productImages[] = [
-                'path' => env('APP_URL') . '/storage/'.$image_path,
+                'path' => env('APP_URL') . '/storage/' . $image_path,
                 'type' => 'images',
                 'position' => 1
             ];
@@ -872,42 +853,123 @@ protected function arrayUniqueByField($array, $field) {
         $product->images()->createMany($productImages);
 
 
-        foreach($skus as $key=>$sku) {
-            if(empty($sku['sku'])) continue;
+        foreach ($skus as $key => $sku) {
+            if (empty($sku['sku'])) continue;
             // use the sku to find the product id and add the images to the sku
-            $sku_code = $main_sku."-".$sku['sku'];
+            $sku_code = $main_sku . "-" . $sku['sku'];
             $product = $this->productRepository->findOneByField("sku", $sku_code);
-            if(is_null($product)) continue;
+            if (is_null($product)) continue;
             $product_id = $product->id;
             $images_url = isset($images[$sku['image_id']]) ? trim($images[$sku['image_id']]) : null;
-            if(is_null($images_url)) continue;
+            if (is_null($images_url)) continue;
             $info = pathinfo($images_url);
-            $image_path = "product/".$product_id."/".$info['filename'].".webp";
-            $local_image_path = "storage/".$image_path;
-            if(!file_exists(public_path($local_image_path))) {
-            
+            $image_path = "product/" . $product_id . "/" . $info['filename'] . ".webp";
+            $local_image_path = "storage/" . $image_path;
+            if (!file_exists(public_path($local_image_path))) {
+
                 $contents = file_get_contents($images_url, false, stream_context_create($arrContextOptions));
                 //var_dump($contents);  Storage
                 Storage::disk("images")->put($local_image_path, $contents);
-           
             }
 
             $productImages = [];
             $productImages[] = [
-                'path' => env('APP_URL') . '/storage/'.$image_path,
+                'path' => env('APP_URL') . '/storage/' . $image_path,
                 'type' => 'images',
                 'position' => 1
             ];
 
 
             $product->images()->createMany($productImages);
-
         }
-
-
     }
 
+
+    /**
+     * @description: 下载shopify media到本地，并替换为本地路径
+     * @param {*} $body_html
+     * @param {*} $product_id
+     * @return {*}
+     * @Author: rickon
+     * @Date: 2025-05-07 14:38:01
+     */
+    public function downlowdShopifyMediaToLocal($body_html, $product_id)
+    {
+        // 使用 DOMDocument 解析 HTML
+        $dom = new \DOMDocument();
+        @$dom->loadHTML($body_html);
+
+        $arrContextOptions = array(
+            "ssl" => array(
+                "verify_peer" => false,
+                "verify_peer_name" => false,
+            ),
+        );
+
+        // 处理图片
+        $imgTags = $dom->getElementsByTagName('img');
+        foreach ($imgTags as $img) {
+            $imgUrl = $img->getAttribute('src');
+            if ($imgUrl) {
+                $info = pathinfo($imgUrl);
+                $suffix = in_array($info['extension'], ['gif']) ? $info['extension'] : 'webp';
+                $imagePath = "product_desc/images/" . $product_id . "/" . $info['filename'] . "." . $suffix;
+                $localImgPath = "storage/" . $imagePath;
+
+                // if (!is_dir($localImgPath)) {
+                //     mkdir($localImgPath, 0777, true);
+                // }
+
+                $is_local = false;
+                if (!file_exists(public_path($localImgPath))) {
+                    $contents = file_get_contents($imgUrl, false, stream_context_create($arrContextOptions));
+                    Storage::disk("images")->put($localImgPath, $contents);
+                    $is_local = true;
+                }
+
+                if ($is_local) {
+                    $localImgUrl = env('APP_URL') . '/storage/' . $localImgPath;
+                    $img->setAttribute('src', $localImgUrl);
+                    $img->setAttribute('data-src', $localImgUrl);
+                }
+            }
+        }
+
+        // 处理视频
+        $videoTags = $dom->getElementsByTagName('video');
+        foreach ($videoTags as $video) {
+            $sourceTags = $video->getElementsByTagName('source');
+            foreach ($sourceTags as $source) {
+                $videoUrl = $source->getAttribute('src');
+                if ($videoUrl) {
+
+                    $info = pathinfo($imgUrl);
+                    $suffix = $info['extension'];
+                    $videoPath = "product_desc/video/" . $product_id . "/" . $info['filename'] . "." . $suffix;
+                    $localVideoPath = "storage/" . $videoPath;
+
+                    if (!is_dir($localVideoPath)) {
+                        mkdir($localVideoPath, 0777, true);
+                    }
+
+                    $is_local = false;
+                    if (!file_exists(public_path($localVideoPath))) {
+                        $contents = file_get_contents($imgUrl, false, stream_context_create($arrContextOptions));
+                        Storage::disk("images")->put($localVideoPath, $contents);
+                        $is_local = true;
+                    }
+
+                    $videoFilename = basename(parse_url($videoUrl, PHP_URL_PATH));
+                    $localVideoPath = $videoDir. '/' . $videoFilename;
+                    if ($is_local) {
+                        $localVideoUrl = env('APP_URL') . '/storage/' . $videoPath;
+                        $source->setAttribute('src', $localVideoUrl);
+                    }
+                }
+            }
+        }
+
+        // 返回替换后的 HTML
+        return $dom->saveHTML();
+    }
 }
-
-
-
