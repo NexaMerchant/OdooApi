@@ -916,18 +916,14 @@ class ProductsController extends Controller
                 $imagePath = "product_desc/images/" . $product_id . "/" . $info['filename'] . "." . $suffix;
                 $localImgPath = "storage/" . $imagePath;
 
-                // if (!is_dir($localImgPath)) {
-                //     mkdir($localImgPath, 0777, true);
-                // }
-
-                $is_local = false;
+                // 本地不存在则下载
                 if (!file_exists(public_path($localImgPath))) {
                     $contents = file_get_contents($imgUrl, false, stream_context_create($arrContextOptions));
                     Storage::disk("images")->put($localImgPath, $contents);
-                    $is_local = true;
                 }
 
-                if ($is_local) {
+                // 替换为本地路径
+                if (file_exists(public_path($localImgPath))) {
                     $localImgUrl = env('APP_URL') . '/' . $localImgPath;
                     $img->setAttribute('src', $localImgUrl);
                     $img->setAttribute('data-src', $localImgUrl);
@@ -948,20 +944,14 @@ class ProductsController extends Controller
                     $videoPath = "product_desc/video/" . $product_id . "/" . $info['filename'] . "." . $suffix;
                     $localVideoPath = "storage/" . $videoPath;
 
-                    if (!is_dir($localVideoPath)) {
-                        mkdir($localVideoPath, 0777, true);
-                    }
-
-                    $is_local = false;
+                    // 本地不存在则下载
                     if (!file_exists(public_path($localVideoPath))) {
                         $contents = file_get_contents($imgUrl, false, stream_context_create($arrContextOptions));
                         Storage::disk("images")->put($localVideoPath, $contents);
-                        $is_local = true;
                     }
 
-                    $videoFilename = basename(parse_url($videoUrl, PHP_URL_PATH));
-                    $localVideoPath = $videoDir. '/' . $videoFilename;
-                    if ($is_local) {
+                    // 替换为本地路径
+                    if (file_exists(public_path($localVideoPath))) {
                         $localVideoUrl = env('APP_URL') . '/' . $videoPath;
                         $source->setAttribute('src', $localVideoUrl);
                     }
