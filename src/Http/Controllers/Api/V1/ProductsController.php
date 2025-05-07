@@ -660,7 +660,7 @@ class ProductsController extends Controller
             if ($option2) $Variant[$option2] = $this->findAttributeOptionID($option2, $sku['option2']);
             if ($option3) $Variant[$option3] = $this->findAttributeOptionID($option3, $sku['option3']);
 
-            $Variant['sku'] = $sku['sku'];
+            $Variant['sku'] = $input['sku'] . '-' . $sku['sku'];
             $Variants["variant_" . $i] = $Variant;
             $i++;
         }
