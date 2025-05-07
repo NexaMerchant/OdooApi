@@ -928,7 +928,7 @@ class ProductsController extends Controller
                 }
 
                 if ($is_local) {
-                    $localImgUrl = env('APP_URL') . '/storage/' . $localImgPath;
+                    $localImgUrl = env('APP_URL') . '/' . $localImgPath;
                     $img->setAttribute('src', $localImgUrl);
                     $img->setAttribute('data-src', $localImgUrl);
                 }
@@ -962,7 +962,7 @@ class ProductsController extends Controller
                     $videoFilename = basename(parse_url($videoUrl, PHP_URL_PATH));
                     $localVideoPath = $videoDir. '/' . $videoFilename;
                     if ($is_local) {
-                        $localVideoUrl = env('APP_URL') . '/storage/' . $videoPath;
+                        $localVideoUrl = env('APP_URL') . '/' . $videoPath;
                         $source->setAttribute('src', $localVideoUrl);
                     }
                 }
