@@ -899,7 +899,10 @@ class ProductsController extends Controller
     {
         // 使用 DOMDocument 解析 HTML
         $dom = new \DOMDocument();
-        @$dom->loadHTML($body_html);
+        // 避免解析时产生警告
+        libxml_use_internal_errors(true);
+        $dom->loadHTML('<?xml encoding="UTF-8">' . $body_html);
+        libxml_clear_errors();
 
         $arrContextOptions = array(
             "ssl" => array(
@@ -961,7 +964,18 @@ class ProductsController extends Controller
             }
         }
 
+        // 提取原始结构内容
+        $body = $dom->getElementsByTagName('body')->item(0);
+        if ($body) {
+            $new_body_html = '';
+            foreach ($body->childNodes as $node) {
+                $new_body_html .= $dom->saveHTML($node);
+            }
+        } else {
+            $new_body_html = $dom->saveHTML();
+        }
+
         // 返回替换后的 HTML
-        return $dom->saveHTML();
+        return $new_body_html;
     }
 }
