@@ -923,8 +923,12 @@ class ProductsController extends Controller
 
                 // 本地不存在则下载
                 if (!file_exists(public_path($localImgPath))) {
-                    $contents = file_get_contents($imgUrl, false, stream_context_create($arrContextOptions));
-                    Storage::disk("images")->put($localImgPath, $contents);
+                    try {
+                        $contents = file_get_contents($imgUrl, false, stream_context_create($arrContextOptions));
+                        Storage::disk("images")->put($localImgPath, $contents);
+                    } catch (\Throwable $th) {
+                        //throw $th;
+                    }
                 }
 
                 // 替换为本地路径
@@ -951,8 +955,12 @@ class ProductsController extends Controller
 
                     // 本地不存在则下载
                     if (!file_exists(public_path($localVideoPath))) {
-                        $contents = file_get_contents($imgUrl, false, stream_context_create($arrContextOptions));
-                        Storage::disk("images")->put($localVideoPath, $contents);
+                        try {
+                            $contents = file_get_contents($imgUrl, false, stream_context_create($arrContextOptions));
+                            Storage::disk("images")->put($localVideoPath, $contents);
+                        } catch (\Throwable $th) {
+                            //throw $th;
+                        }
                     }
 
                     // 替换为本地路径
