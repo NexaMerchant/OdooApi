@@ -660,8 +660,7 @@ class ProductsController extends Controller
             if ($option2) $Variant[$option2] = $this->findAttributeOptionID($option2, $sku['option2']);
             if ($option3) $Variant[$option3] = $this->findAttributeOptionID($option3, $sku['option3']);
 
-            // $Variant['sku'] = $input['sku'] . '-' . $sku['sku'];
-            $Variant['sku'] = $sku['sku'];
+            $Variant['sku'] = $input['sku'] . '-' . $sku['sku'];
             $Variants["variant_" . $i] = $Variant;
             $i++;
         }
@@ -857,8 +856,7 @@ class ProductsController extends Controller
         foreach ($skus as $sku) {
             if (empty($sku['sku'])) continue;
             // use the sku to find the product id and add the images to the sku
-            // $sku_code = $main_sku . "-" . $sku['sku'];
-            $sku_code = $sku['sku'];
+            $sku_code = $main_sku . "-" . $sku['sku'];
             $product = $this->productRepository->findOneByField("sku", $sku_code);
             if (is_null($product)) continue;
             $product_id = $product->id;
